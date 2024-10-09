@@ -35,7 +35,7 @@ app = Flask(__name__)
 def login():
     # Extract data from request
     data = request.get_jason()
-    userName = data.get('userName')
+    username = data.get('username')
     userId = data.get('userId')
     password = data.get('password')
 
@@ -43,7 +43,7 @@ def login():
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to log in the user using the usersDB module
-    success = usersDB.login(client, userName, userId, password)
+    success = usersDB.login(client, username, userId, password)
 
     # Close the MongoDB connection
     client.close()
@@ -96,13 +96,13 @@ def join_project():
 def add_user():
     # Extract data from request
     data = request.get_json()
-    userName = data.get('userName')
+    username = data.get('username')
     userId = data.get('userId')
     password = data.get('password')
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
     # Attempt to add the user using the usersDB module
-    success = usersDB.addUser(client, userName, userId, password)
+    success = usersDB.addUser(client, username, userId, password)
     # Close the MongoDB connection
     client.close()
     # Return a JSON response
@@ -264,4 +264,3 @@ def check_inventory():
 # Main entry point for the application
 if __name__ == '__main__':
     app.run()
-
