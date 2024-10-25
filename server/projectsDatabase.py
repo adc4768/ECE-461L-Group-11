@@ -1,7 +1,7 @@
 # Import necessary libraries and modules
 from pymongo import MongoClient
 
-import hardwareDB
+import hardwareDatabase as HardwareDB
 
 '''
 Structure of Project entry:
@@ -43,4 +43,3 @@ def checkOutHW(client, projectId, hwSetName, qty, userId):
 def checkInHW(client, projectId, hwSetName, qty, userId):
     # Check in hardware for the specified project and update availability
     pass
-

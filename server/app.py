@@ -1,3 +1,5 @@
+# app.py
+
 # Import necessary libraries and modules
 from bson.objectid import ObjectId
 from flask import Flask, request, jsonify
@@ -8,24 +10,14 @@ import usersDatabase as usersDB
 import projectsDatabase as projectsDB
 import hardwareDatabase as hardwareDB
 
-# In this code, I do not provide details about the failure.
-# That is, I just return the result "fail"; I do not return any details about the failure.
-# I need to add the failure information.
-# For example in the login() method, I just return the fact "fail" like this
-#    if success:
-#      return jsonify({'message' : 'LOGIN SUCCESS'}), 201
-#    else:
-#      return jsonify({'message' : 'LOGIN FAIL'}), 400
-# But, we need to provide the detail like "User ID does not exist" or "The passeord is wrong"
+'''
+We need to use different status codes such as 201 or 403 instead of 200 and 400.
+Each status code has a specific meaning, so we need to select the appropriate one accordingly
 
-# Additionally, we need to use different status codes such as 201 or 403 instead of 200 and 400.
-# Each status code has a specific meaning, so we need to select the appropriate one accordingly.
+'''
+# Define the MongoDB connection string  LjIkXFETwAWP2YxP
 
-
-# Define the MongoDB connection string
-MONGODB_SERVER = "mongodb://localhost:27017/" 
-# I now using this but to use this app by many people, I have to use remotehot
-#So, this is tentative mongo server
+MONGODB_SERVER = "mongodb+srv://Group11:LjIkXFETwAWP2YxP@cluster0.pg1fa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 # Initialize a new Flask web application
 app = Flask(__name__)
@@ -34,26 +26,25 @@ app = Flask(__name__)
 @app.route('/login', methods=['POST'])
 def login():
     # Extract data from request
-    data = request.get_jason()
+    data = request.get_json()
     username = data.get('username')
     userId = data.get('userId')
     password = data.get('password')
 
-    # Connect to MongoDB    
+    # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to log in the user using the usersDB module
-    success = usersDB.login(client, username, userId, password)
+    success, response = usersDB.login(client, username, userId, password)
 
     # Close the MongoDB connection
     client.close()
 
-    # Return a JSON response
+    # Return a JSON response with detailed messages and appropriate status codes
     if success:
-        return jsonify({'message' : 'LOGIN SUCCESS'}), 200
+        return jsonify({'message': response}), 200  
     else:
-        return jsonify({'message' : 'LOGIN FAIL'}), 400
-
+        return jsonify({'message': response}), 400
 
 # Route for the main page (Work in progress)
 #I cannot find out what to write in here
@@ -68,65 +59,74 @@ def mainPage():
     # Close the MongoDB connection
     client.close()
     # Return a JSON response
-    return jsonify({})
+    return jsonify({}) 
 
 # Route for joining a project
 @app.route('/join_project', methods=['POST'])
 def join_project():
     # Extract data from request
     data = request.get_json()
-    projectName = data.get('projectName')
+    userId = data.get('userId')
     projectId = data.get('projectId')
     description = data.get('description')
 
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
-    # Attempt to join the project using the usersDB module
-    success = usersDB.joinProhect(client, projectName, projectId, description)
-    # Close the MongoDB connection
+
+    success, message = usersDB.joinProject(client, userId, projectId)
+
     client.close()
-    # Return a JSON response
+
     if success:
-        return jsonify({'message':'JOIN PROJECT  SUCCESS'}),200
+        return jsonify({'message': message}), 200 
     else:
-        return jsonify({'message':'JOIN PROJECT  FAIL'}),400
-    
+        return jsonify({'message': message}), 400 
+
 # Route for adding a new user
 @app.route('/add_user', methods=['POST'])
 def add_user():
+    
     # Extract data from request
     data = request.get_json()
     username = data.get('username')
     userId = data.get('userId')
     password = data.get('password')
+
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
+
     # Attempt to add the user using the usersDB module
-    success = usersDB.addUser(client, username, userId, password)
+    success, message = usersDB.addUser(client, username, userId, password)
+
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
-    if success :
-        return jsonify({'message':'ADD USER SUCCESS'}),200
+    if success:
+        return jsonify({'message': message}), 200  # Created
     else:
-        return  jsonify({'message':'ADD USER FAIL'}),400
+        return jsonify({'message': message}), 400  
 
 # Route for getting the list of user projects
-@app.route('/get_user_projects_list', methods=['POST'])
+@app.route('/get_user_projects_list', methods=['GET'])
 def get_user_projects_list():
-    # Extract data from request
+    # Extract 'userId' from query parameters
     userId = request.args.get('userId')
+
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
+
     # Fetch the user's projects using the usersDB module
-    projects = usersDB.getUserProjectsList(client, userId)
+    success, response = usersDB.getUserProjectsList(client, userId)
+
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
-    if projects is None:
-        return jsonify({'message': 'FAIL'}), 400
+    if success:
+        return jsonify({'projects': response}), 200  
     else:
-        return jsonify({'projects': projects}), 200
+        return jsonify({'message': response}), 400  
 
 # Route for creating a new project
 @app.route('/create_project', methods=['POST'])
@@ -135,132 +135,185 @@ def create_project():
     data = request.get_json()
     projectName = data.get('projectName')
     projectId = data.get('projectId')
-    description = data.get(description)
+    description = data.get('description')
+
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
+
     # Attempt to create the project using the projectsDB module
     success = projectsDB.createProject(client, projectName, projectId, description)
+
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
     if success:
-        return jsonify({'message': 'SUCCESS'}), 200
-    return jsonify({'message': 'FAIL'}), 200
+        return jsonify({'message': 'Project created successfully.'}), 200  # Created
+    else:
+        return jsonify({'message': 'Project creation failed. Project ID may already exist.'}), 400  
 
 # Route for getting project information
-# I am not sure what we are suposed to do. I think "methods = ['GET]",
-# But the provided code is "methods = ['GET]". I gonna ask TA abut this
-@app.route('/get_project_info', methods=['POST'])
+@app.route('/get_project_info', methods=['GET'])
 def get_project_info():
-    # Extract data from request
+    # Extract 'projectId' from query parameters
+    projectId = request.args.get('projectId')
 
     # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
 
     # Fetch project information using the projectsDB module
-    projectInfo = projectsDB.queryProject(client, projectId) 
-    # I think we will use the queryProject() method, but I am not certain
+    project = projectsDB.queryProject(client, projectId)
 
     # Close the MongoDB connection
+    client.close()
 
     # Return a JSON response
-    return jsonify({})
+    if project:
+        # Remove ObjectId from the response
+        project.pop('_id', None)
+        return jsonify({'project': project}), 200  
+    else:
+        return jsonify({'message': 'Project not found.'}), 400
 
-# Route for getting all hardware names
-@app.route('/get_all_hw_names', methods=['POST'])
+# Route for getting all hardware set names
+@app.route('/get_all_hw_names', methods=['GET'])
 def get_all_hw_names():
     # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
 
-    # Fetch all hardware names using the hardwareDB module
+    # Fetch all hardware set names using the hardwareDB module
+    hw_names = hardwareDB.getAllHwNames(client)
 
     # Close the MongoDB connection
+    client.close()
 
     # Return a JSON response
-    return jsonify({})
+    return jsonify({'hardwareSets': hw_names}), 200  
 
 # Route for getting hardware information
-@app.route('/get_hw_info', methods=['POST'])
+@app.route('/get_hw_info', methods=['GET'])
 def get_hw_info():
-    # Extract data from request
+    # Extract 'hwSetName' from query parameters
+    hwSetName = request.args.get('hwSetName')
 
     # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
 
     # Fetch hardware set information using the hardwareDB module
+    hardware_set = hardwareDB.queryHardwareSet(client, hwSetName)
 
     # Close the MongoDB connection
+    client.close()
 
     # Return a JSON response
-    return jsonify({})
-
+    if hardware_set:
+        # Remove ObjectId from the response
+        hardware_set.pop('_id', None)
+        return jsonify({'hardwareSet': hardware_set}), 200  
+    else:
+        return jsonify({'message': 'Hardware set not found.'}), 400
 # Route for checking out hardware
 @app.route('/check_out', methods=['POST'])
 def check_out():
     # Extract data from request
     data = request.get_json()
-    client = data.get('client')
     projectId = data.get('projectId')
     hwSetName = data.get('hwSetName')
     qty = data.get('qty')
     userId = data.get('userId')
+
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
+
     # Attempt to check out the hardware using the projectsDB module
     success = projectsDB.checkOutHW(client, projectId, hwSetName, qty, userId)
+
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
-    if success : 
-        return jsonify({'message' : 'CHECK OUT SUCCESS'}),200
-    else : 
-        return jsonify({'message' : 'CHECK OUT FAIL'}),300
+    if success:
+        return jsonify({'message': 'CHECK OUT SUCCESS'}), 200  
+    else:
+        return jsonify({'message': 'CHECK OUT FAIL'}), 400
 
 # Route for checking in hardware
 @app.route('/check_in', methods=['POST'])
 def check_in():
     # Extract data from request
-    data = request.get_json()
-    client = data.get('client')
+    data = request.get_json()  
     projectId = data.get('projectId')
     hwSetName = data.get('hwSetName')
     qty = data.get('qty')
     userId = data.get('userId')
+
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
-    # Attempt to check out the hardware using the projectsDB module
+
+    # Attempt to check in the hardware using the projectsDB module
     success = projectsDB.checkInHW(client, projectId, hwSetName, qty, userId)
+
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
-    if success : 
-        return jsonify({'message' : 'CHECK IN SUCCESS'}),200
-    else : 
-        return jsonify({'message' : 'CHECK IN FAIL'}),300
+    if success:
+        return jsonify({'message': 'CHECK IN SUCCESS'}), 200  
+    else:
+        return jsonify({'message': 'CHECK IN FAIL'}), 400
 
 # Route for creating a new hardware set
 @app.route('/create_hardware_set', methods=['POST'])
 def create_hardware_set():
     # Extract data from request
+    data = request.get_json()
+    hwSetName = data.get('hwSetName')
+    initCapacity = data.get('initCapacity')
 
     # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
 
     # Attempt to create the hardware set using the hardwareDB module
+    success = hardwareDB.createHardwareSet(client, hwSetName, initCapacity)
 
     # Close the MongoDB connection
+    client.close()
 
     # Return a JSON response
-    return jsonify({})
+    if success:
+        return jsonify({'message': 'Hardware set created successfully.'}), 200
+    else:
+        return jsonify({'message': 'Hardware set creation failed. It may already exist.'}), 400  
 
 # Route for checking the inventory of projects
 @app.route('/api/inventory', methods=['GET'])
 def check_inventory():
     # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
+    db = client['database_name']
+    projects = db['projects']
 
-    # Fetch all projects from the HardwareCheckout.Projects collection
+    # Fetch all projects
+    all_projects = projects.find()
+
+    # Prepare the response
+    project_list = []
+    for project in all_projects:
+        project_data = {
+            'projectName': project.get('projectName'),
+            'projectId': project.get('projectId'),
+            'description': project.get('description'),
+            'hwSets': project.get('hwSets', {}),
+            'users': project.get('users', [])
+        }
+        project_list.append(project_data)
 
     # Close the MongoDB connection
+    client.close()
 
     # Return a JSON response
-    return jsonify({})
+    return jsonify({'inventory': project_list}), 200  
 
 # Main entry point for the application
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
