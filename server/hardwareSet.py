@@ -1,5 +1,3 @@
-# hardwareSet.py
-
 class hardwareSet:
     def __init__(self):
         self.__capacity = 0
@@ -24,14 +22,14 @@ class hardwareSet:
         if qty > self.__availability:
             self.__checkedOut[projectID] = self.__availability
             self.__availability = 0
-            return -1  
+            return -1  #If qty is larger than abailability, reuturn false
         self.__checkedOut[projectID] += qty
         self.__availability -= qty
         return 0  
 
     def check_in(self, qty, projectID):
         if qty > self.__checkedOut[projectID]:
-            return -1 
+            return -1  #If the qty is larger than the checkOut, retuen false
         self.__checkedOut[projectID] -= qty
         self.__availability += qty
         return 0 

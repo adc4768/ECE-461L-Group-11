@@ -47,19 +47,28 @@ def login():
         return jsonify({'message': response}), 400
 
 # Route for the main page (Work in progress)
-#I cannot find out what to write in here
-@app.route('/main')
+# Route for the main page (fetch user projects)
+@app.route('/main', methods=['GET'])
 def mainPage():
-    # Extract data from request
+    # Extract 'userId' from query parameters
+    userId = request.args.get('userId')
+    if not userId:
+        return jsonify({'message': 'User ID not provided.'}), 400
 
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
+
     # Fetch user projects using the usersDB module
+    success, response = usersDB.getUserProjectsList(client, userId)
 
     # Close the MongoDB connection
     client.close()
+
     # Return a JSON response
-    return jsonify({}) 
+    if success:
+        return jsonify({'projects': response}), 200
+    else:
+        return jsonify({'message': response}), 400
 
 # Route for joining a project
 @app.route('/join_project', methods=['POST'])
@@ -68,7 +77,6 @@ def join_project():
     data = request.get_json()
     userId = data.get('userId')
     projectId = data.get('projectId')
-    description = data.get('description')
 
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
@@ -244,7 +252,7 @@ def check_in():
     data = request.get_json()  
     projectId = data.get('projectId')
     hwSetName = data.get('hwSetName')
-    qty = data.get('qty')
+    qty = int(data.get('qty',0))
     userId = data.get('userId')
 
     # Connect to MongoDB

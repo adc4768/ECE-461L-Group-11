@@ -15,15 +15,7 @@ HardwareSet = {
 
 # Function to create a new hardware set
 def createHardwareSet(client, hwSetName, initCapacity):
-    """
-    Create a new hardware set in the database.
-    
-    :param client: MongoClient instance
-    :param hwSetName: Name of the hardware set
-    :param initCapacity: Initial capacity of the hardware set
-    :return: True if created successfully, False otherwise
-    """
-    db = client['database_name']  # Replace 'database_name' with your actual database name
+    db = client['User_DB'] 
     hardware_sets = db['hardwareSets']
     
     # Check if the hardware set already exists
@@ -38,21 +30,13 @@ def createHardwareSet(client, hwSetName, initCapacity):
         'availability': initCapacity
     }
     
-    # Insert the hardware set into the collection
     result = hardware_sets.insert_one(hardware_set)
     
     return result.inserted_id is not None  # Return True if inserted, False otherwise
 
 # Function to query a hardware set by its name
 def queryHardwareSet(client, hwSetName):
-    """
-    Query and return a hardware set from the database by its name.
-    
-    :param client: MongoClient instance
-    :param hwSetName: Name of the hardware set to query
-    :return: Hardware set document if found, None otherwise
-    """
-    db = client['database_name']
+    db = client['User_DB']
     hardware_sets = db['hardwareSets']
     
     hardware_set = hardware_sets.find_one({'hwName': hwSetName})
@@ -61,15 +45,7 @@ def queryHardwareSet(client, hwSetName):
 
 # Function to update the availability of a hardware set
 def updateAvailability(client, hwSetName, newAvailability):
-    """
-    Update the availability of an existing hardware set.
-    
-    :param client: MongoClient instance
-    :param hwSetName: Name of the hardware set to update
-    :param newAvailability: New availability value
-    :return: True if updated successfully, False otherwise
-    """
-    db = client['database_name']
+    db = client['User_DB']
     hardware_sets = db['hardwareSets']
     
     result = hardware_sets.update_one(
@@ -81,15 +57,7 @@ def updateAvailability(client, hwSetName, newAvailability):
 
 # Function to request space from a hardware set
 def requestSpace(client, hwSetName, amount):
-    """
-    Request a certain amount of hardware and update availability.
-    
-    :param client: MongoClient instance
-    :param hwSetName: Name of the hardware set
-    :param amount: Amount of hardware to request
-    :return: True if request successful (availability decreased), False otherwise
-    """
-    db = client['database_name']
+    db = client['User_DB']
     hardware_sets = db['hardwareSets']
     
     # Check current availability
@@ -109,15 +77,35 @@ def requestSpace(client, hwSetName, amount):
     
     return result.modified_count > 0
 
+
+# # Function to return hardware to the hardware set
+# def returnSpace(client, hwSetName, amount):
+#     db = client['User_DB']
+#     hardware_sets = db['hardwareSets']
+    
+#     # Check current availability and capacity
+#     hardware_set = hardware_sets.find_one({'hwName': hwSetName})
+#     if not hardware_set:
+#         return False  # Hardware set does not exist
+    
+#     capacity = hardware_set['capacity']
+#     availability = hardware_set['availability']
+    
+#     if availability + amount > capacity:
+#         return False  # Cannot exceed capacity
+    
+#     # Update availability
+#     new_availability = availability + amount
+#     result = hardware_sets.update_one(
+#         {'hwName': hwSetName},
+#         {'$set': {'availability': new_availability}}
+#     )
+    
+#     return result.modified_count > 0
+
 # Function to get all hardware set names
 def getAllHwNames(client):
-    """
-    Get and return a list of all hardware set names.
-    
-    :param client: MongoClient instance
-    :return: List of hardware set names
-    """
-    db = client['database_name']
+    db = client['User_DB']
     hardware_sets = db['hardwareSets']
     
     hw_names = hardware_sets.distinct('hwName')
