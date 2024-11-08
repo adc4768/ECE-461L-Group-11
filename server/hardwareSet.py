@@ -1,9 +1,11 @@
+# hardwareSet.py
+
 class hardwareSet:
-    def __init__(self):
-        self.__capacity = 0
-        self.__availability = 0
-        self.__checkedOut = [0] * 1000  
-        self.__hwName = "foo"
+    def __init__(self, hwName, capacity, availability=None, checkedOut=None):
+        self.__hwName = hwName
+        self.__capacity = capacity
+        self.__availability = availability if availability is not None else capacity
+        self.__checkedOut = checkedOut if checkedOut is not None else {}
 
     def initialize_capacity(self, qty):
         self.__capacity = qty
@@ -20,16 +22,26 @@ class hardwareSet:
 
     def check_out(self, qty, projectID):
         if qty > self.__availability:
-            self.__checkedOut[projectID] = self.__availability
-            self.__availability = 0
-            return -1  #If qty is larger than abailability, reuturn false
-        self.__checkedOut[projectID] += qty
+            return False  # Not enough availability
         self.__availability -= qty
-        return 0  
+        self.__checkedOut[projectID] = self.__checkedOut.get(projectID, 0) + qty
+        return True  
 
     def check_in(self, qty, projectID):
-        if qty > self.__checkedOut[projectID]:
-            return -1  #If the qty is larger than the checkOut, retuen false
-        self.__checkedOut[projectID] -= qty
+        project_qty = self.__checkedOut.get(projectID, 0)
+        if qty > project_qty:
+            return False  # Cannot check in more than checked out
         self.__availability += qty
-        return 0 
+        if qty == project_qty:
+            del self.__checkedOut[projectID]
+        else:
+            self.__checkedOut[projectID] = project_qty - qty
+        return True 
+
+    def to_dict(self):
+        return {
+            '_id': self.__hwName,
+            'capacity': self.__capacity,
+            'availability': self.__availability,
+            'checkedOut': self.__checkedOut
+        }
