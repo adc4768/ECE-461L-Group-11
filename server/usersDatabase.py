@@ -1,10 +1,8 @@
-# usersDatabase.py
-
 from pymongo import MongoClient
 
 temp = 'User_DB'  # Replace with your actual database name
 
-# Import encrypt and decrypt functions
+# Encryption and decryption functions
 def encrypt(inputText, N, D):
     reversedText = inputText[::-1]
     encryptedText = ""
