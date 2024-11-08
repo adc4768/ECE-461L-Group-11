@@ -1,5 +1,3 @@
-# projectsDatabase.py
-
 # Import necessary libraries and modules
 from pymongo import MongoClient
 
@@ -8,7 +6,11 @@ Structure of Project entry:
 Project = {
     'projectName': projectName,
     'projectId': projectId,
-    'description': description
+    'description': description,
+    'hwSets': {
+        'HWset1': {'capacity': 100, 'availability': 100},
+        'HWset2': {'capacity': 100, 'availability': 100}
+    }
 }
 '''
 
@@ -31,14 +33,79 @@ def createProject(client, projectName, projectId, description):
     if existing_project:
         return False  # Project already exists
     
-    # Create the project document
+    # Create the project document with hardware sets
     project = {
         'projectName': projectName,
         'projectId': projectId,
-        'description': description
+        'description': description,
+        'hwSets': {
+            'HWset1': {'capacity': 100, 'availability': 100},
+            'HWset2': {'capacity': 100, 'availability': 100}
+        }
     }
     
     # Insert the project into the collection
     result = projects.insert_one(project)
     
     return result.inserted_id is not None  # Return True if inserted, False otherwise
+
+# Function to check out hardware from a project
+def checkOutHW(client, projectId, hwSetName, qty):
+    db = client['User_DB']
+    projects = db['projects']
+    
+    project = projects.find_one({'projectId': projectId})
+    if not project:
+        return False  # Project not found
+    
+    hwSets = project.get('hwSets', {})
+    hwSet = hwSets.get(hwSetName)
+    if not hwSet:
+        return False  # Hardware set not found in project
+    
+    availability = hwSet.get('availability', 0)
+    if qty > availability:
+        return False  # Not enough availability
+    
+    # Update availability
+    hwSet['availability'] = availability - qty
+    hwSets[hwSetName] = hwSet
+    
+    # Update the project document
+    result = projects.update_one(
+        {'projectId': projectId},
+        {'$set': {'hwSets': hwSets}}
+    )
+    
+    return result.modified_count > 0  # Return True if updated
+
+# Function to check in hardware to a project
+def checkInHW(client, projectId, hwSetName, qty):
+    db = client['User_DB']
+    projects = db['projects']
+    
+    project = projects.find_one({'projectId': projectId})
+    if not project:
+        return False  # Project not found
+    
+    hwSets = project.get('hwSets', {})
+    hwSet = hwSets.get(hwSetName)
+    if not hwSet:
+        return False  # Hardware set not found in project
+    
+    capacity = hwSet.get('capacity', 0)
+    availability = hwSet.get('availability', 0)
+    if availability + qty > capacity:
+        return False  # Cannot exceed capacity
+    
+    # Update availability
+    hwSet['availability'] = availability + qty
+    hwSets[hwSetName] = hwSet
+    
+    # Update the project document
+    result = projects.update_one(
+        {'projectId': projectId},
+        {'$set': {'hwSets': hwSets}}
+    )
+    
+    return result.modified_count > 0  # Return True if updated
