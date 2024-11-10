@@ -1,5 +1,6 @@
 from pymongo import MongoClient
 
+
 temp = 'User_DB'  # Replace with your actual database name
 
 # Encryption and decryption functions
@@ -34,6 +35,7 @@ Structure of User entry:
 User = {
     'userId': userId,
     'password': password
+    'joiningPJ' : []
 }
 '''
 
@@ -50,7 +52,8 @@ def addUser(client, userId, password):
     # Create the user document
     User = {
         'userId': userId,
-        'password': encrypted_password  # Store encrypted password
+        'password': encrypted_password , # Store encrypted password
+        'joiningPJ' : []
     }
 
     # Insert the user into the database
@@ -90,3 +93,25 @@ def login(client, userId, password):
         return True, 'Login successful.'
     else:
         return False, 'Incorrect password.'
+    
+def join_project(client, userId, projectId):
+    db = client['User_DB']
+    projects = db['projects']
+    users = db['users']
+
+    #Check if the projectId exists or not
+    existing_project = projects.find_one({'projectId': projectId})
+    if existing_project:
+        return False
+    
+        users = db['users']
+    result = users.update_one(
+        {'userId': userId},
+        {'$addToSet': {'joiningPJ': projectId}}
+    )
+
+    if result.modified_count > 0:
+        return True, 'Project successfully added to user joiningPJ.'
+    else:
+        return False, 'Project was already in joiningPJ or failed to add.'
+

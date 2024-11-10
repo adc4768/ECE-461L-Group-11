@@ -57,12 +57,35 @@ def add_user():
         return jsonify({'message': message}), 200  # Created
     else:
         return jsonify({'message': message}), 400  
+    
+@app.route('/join', methods=['POST'])
+def join():
+    # Extract data from request
+    data = request.get_json()
+    userId = data.get('userId')
+    projectId = data.get('projectId')
+
+    # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
+
+    # Attempt to add the user using the usersDB module
+    success, message = usersDB.join_project(client, userId, projectId)
+
+    # Close the MongoDB connection
+    client.close()
+
+    # Return a JSON response
+    if success:
+        return jsonify({'message': message}), 200  # Created
+    else:
+        return jsonify({'message': message}), 400 
 
 # Route for creating a new project
 @app.route('/create_project', methods=['POST'])
 def create_project():
     # Extract data from request
     data = request.get_json()
+    userId = data.get('userId')
     projectName = data.get('projectName')
     projectId = data.get('projectId')
     description = data.get('description')
@@ -71,7 +94,7 @@ def create_project():
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to create the project using the projectsDB module
-    success = projectsDB.createProject(client, projectName, projectId, description)
+    success = projectsDB.createProject(client, userId, projectName, projectId, description)
 
     # Close the MongoDB connection
     client.close()

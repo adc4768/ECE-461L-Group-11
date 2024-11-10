@@ -24,9 +24,10 @@ def queryProject(client, projectId):
     return project
 
 # Function to create a new project
-def createProject(client, projectName, projectId, description):
+def createProject(client,userId, projectName, projectId, description):
     db = client['User_DB']
     projects = db['projects']
+    users = db['users']
     
     # Check if the project already exists
     existing_project = projects.find_one({'projectId': projectId})
@@ -46,8 +47,15 @@ def createProject(client, projectName, projectId, description):
     
     # Insert the project into the collection
     result = projects.insert_one(project)
-    
-    return result.inserted_id is not None  # Return True if inserted, False otherwise
+    if result.inserted_id:
+        # Add the projectId to the user's joiningPJ array
+        users.update_one(
+            {'userId': userId},
+            {'$addToSet': {'joiningPJ': projectId}}
+        )
+        return True, 'Project created and added to user joiningPJ.'
+    else:
+        return False, 'Failed to create project.'
 
 # Function to check out hardware from a project
 def checkOutHW(client, projectId, hwSetName, qty):
