@@ -73,10 +73,14 @@ def checkOutHW(client, projectId, hwSetName, qty):
     
     availability = hwSet.get('availability', 0)
     if qty > availability:
-        return False  # Not enough availability
+        actual_qty = availability
+    else :
+        actual_qty = qty
+
+         # Not enough availability
     
     # Update availability
-    hwSet['availability'] = availability - qty
+    hwSet['availability'] = availability - actual_qty
     hwSets[hwSetName] = hwSet
     
     # Update the project document
@@ -103,8 +107,14 @@ def checkInHW(client, projectId, hwSetName, qty):
     
     capacity = hwSet.get('capacity', 0)
     availability = hwSet.get('availability', 0)
-    if availability + qty > capacity:
-        return False  # Cannot exceed capacity
+    reamin = capacity - availability
+
+# -------------I have to do this--------------
+    # if qty > reamin:
+    #     actual_qty = remain
+    # else:
+    #     actual_qty = qty
+        
     
     # Update availability
     hwSet['availability'] = availability + qty
