@@ -33,6 +33,6 @@ This program provides several key functions to manage user authentication, proje
 
 - **check_in()**: Allows a user to check in a specified quantity of hardware to a project’s hardware set (`HWset1` or `HWset2`). This function increases the availability of the hardware set, as long as it does not exceed the hardware’s capacity. The edge case where the user tries to check in more items than remaining one has already been implemented.
 
--**get_user_projects()**:  Retrieves the all projectId one user joining. 
+- **get_user_projects()**:  Retrieves the all projectId one user joining. 
 
 ---
