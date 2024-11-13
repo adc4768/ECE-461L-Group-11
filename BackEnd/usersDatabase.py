@@ -99,12 +99,11 @@ def join_project(client, userId, projectId):
     projects = db['projects']
     users = db['users']
 
-    #Check if the projectId exists or not
+    # Check if the projectId exists
     existing_project = projects.find_one({'projectId': projectId})
-    if existing_project:
-        return False
-    
-        users = db['users']
+    if not existing_project:
+        return False, 'Project does not exist.'
+
     result = users.update_one(
         {'userId': userId},
         {'$addToSet': {'joiningPJ': projectId}}
