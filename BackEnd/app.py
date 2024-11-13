@@ -148,16 +148,16 @@ def check_out():
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to check out the hardware using the projectsDB module
-    success = projectsDB.checkOutHW(client, projectId, hwSetName, qty)
+    success , result_message = projectsDB.checkOutHW(client, projectId, hwSetName, qty)
 
     # Close the MongoDB connection
     client.close()
 
     # Return a JSON response
     if success:
-        return jsonify({'message': 'CHECK OUT SUCCESS'}), 200  
+        return jsonify({'message': result_message}), 200  
     else:
-        return jsonify({'message': 'CHECK OUT FAIL'}), 400
+        return jsonify({'message': result_message}), 400
 
 # Route for checking in hardware
 @app.route('/check_in', methods=['POST'])
@@ -175,16 +175,38 @@ def check_in():
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to check in the hardware using the projectsDB module
-    success = projectsDB.checkInHW(client, projectId, hwSetName, qty)
+    success, result_message= projectsDB.checkInHW(client, projectId, hwSetName, qty)
 
     # Close the MongoDB connection
     client.close()
 
     # Return a JSON response
     if success:
-        return jsonify({'message': 'CHECK IN SUCCESS'}), 200  
+        return jsonify({'message': result_message}), 200  
     else:
-        return jsonify({'message': 'CHECK IN FAIL'}), 400
+        return jsonify({'message': result_message}), 400
+
+@app.route('/get_user_projects', methods=['GET'])
+def get_user_projects():
+    # Extract userId from query parameters
+    userId = request.args.get('userId')
+
+    if not userId:
+        return jsonify({'message': 'userId not provided.'}), 400
+
+    # Connect to MongoDB
+    client = MongoClient(MONGODB_SERVER)
+
+    # Call get_evetyPRO_user_joining from usersDatabase
+    success, data = usersDB.get_evetyPRO_user_joining(client, userId)
+
+    # Close the MongoDB connection
+    client.close()
+
+    if success:
+        return jsonify({'joiningPJ': data}), 200
+    else:
+        return jsonify({'message': data}), 400
 
 # Main entry point for the application
 if __name__ == '__main__':

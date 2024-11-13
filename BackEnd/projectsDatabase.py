@@ -69,13 +69,15 @@ def checkOutHW(client, projectId, hwSetName, qty):
     hwSets = project.get('hwSets', {})
     hwSet = hwSets.get(hwSetName)
     if not hwSet:
-        return False  # Hardware set not found in project
+        return False, "No such HW exists"  # Hardware set not found in project
     
     availability = hwSet.get('availability', 0)
     if qty > availability:
         actual_qty = availability
+        result_message = "SUCCESS! You checked out the maximum available items since your request exceeded the limit. "
     else :
         actual_qty = qty
+        result_message = "SUCCESS!"
 
          # Not enough availability
     
@@ -89,7 +91,7 @@ def checkOutHW(client, projectId, hwSetName, qty):
         {'$set': {'hwSets': hwSets}}
     )
     
-    return result.modified_count > 0  # Return True if updated
+    return True, result_message  # Return True if updated
 
 # Function to check in hardware to a project
 def checkInHW(client, projectId, hwSetName, qty):
@@ -103,21 +105,21 @@ def checkInHW(client, projectId, hwSetName, qty):
     hwSets = project.get('hwSets', {})
     hwSet = hwSets.get(hwSetName)
     if not hwSet:
-        return False  # Hardware set not found in project
+        return False  ,"Hardware set not found in project"# Hardware set not found in project
     
     capacity = hwSet.get('capacity', 0)
     availability = hwSet.get('availability', 0)
-    reamin = capacity - availability
+    used = capacity - availability
 
-# -------------I have to do this--------------
-    # if qty > reamin:
-    #     actual_qty = remain
-    # else:
-    #     actual_qty = qty
-        
+    if qty > used:
+        actual_qty = used
+        result_message = "SUCCESS! You checked in the maximum items since your request exceeded the limit. "
+    else:
+        actual_qty = qty
+        result_message = "SUCCESS!"
     
     # Update availability
-    hwSet['availability'] = availability + qty
+    hwSet['availability'] = availability + actual_qty
     hwSets[hwSetName] = hwSet
     
     # Update the project document
@@ -126,4 +128,4 @@ def checkInHW(client, projectId, hwSetName, qty):
         {'$set': {'hwSets': hwSets}}
     )
     
-    return result.modified_count > 0  # Return True if updated
+    return True, result_message  # Return True if updated
