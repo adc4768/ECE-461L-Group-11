@@ -94,6 +94,7 @@ def login(client, userId, password):
     else:
         return False, 'Incorrect password.'
     
+
 def join_project(client, userId, projectId):
     db = client['User_DB']
     projects = db['projects']
@@ -104,15 +105,32 @@ def join_project(client, userId, projectId):
     if not existing_project:
         return False, 'Project does not exist.'
 
+    # Retrieve user's current joiningPJ array
+    user = users.find_one({'userId': userId})
+    joiningPJ = user.get('joiningPJ', [])
+
+    if projectId in joiningPJ:
+        return False, "FAILED: You've alredy joined this project"
+
+    # Modify joiningPJ if it already has 4 or more elements
+    if len(joiningPJ) >= 3:
+        joiningPJ = joiningPJ[1:3] + [projectId]  # Remove first, shift and add new projectId
+        return_message = "SUCCESS!\n LIMIT REACHED:The 4th project was added, and the oldest one was removed"
+    else:
+        joiningPJ.append(projectId)  # Simply add if less than 4 elements
+        return_message = "SUCCESS!"
+
+    # Update the user's joiningPJ array
     result = users.update_one(
         {'userId': userId},
-        {'$addToSet': {'joiningPJ': projectId}}
+        {'$set': {'joiningPJ': joiningPJ}}
     )
 
     if result.modified_count > 0:
-        return True, 'Project successfully added to user joiningPJ.'
+        return True, return_message
     else:
         return False, 'Project was already in joiningPJ or failed to add.'
+
 
 
 def get_evetyPRO_user_joining(client, userId):
