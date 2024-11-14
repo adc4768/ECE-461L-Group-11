@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-
+import logging
 
 temp = 'User_DB'  # Replace with your actual database name
 
@@ -103,21 +103,31 @@ def join_project(client, userId, projectId):
     # Check if the projectId exists
     existing_project = projects.find_one({'projectId': projectId})
     if not existing_project:
+        logging.error('Project ID %s does not exist', projectId)
         return False, 'Project does not exist.'
 
-    # Retrieve user's current joiningPJ array
+    logging.info('Checking if project ID %s is already in user ID %s', projectId, userId)
+
     user = users.find_one({'userId': userId})
+    if not user:
+        logging.error('User ID %s does not exist', userId)
+        return False, 'User does not exist.'
+
+    # Retrieve user's current joiningPJ array
     joiningPJ = user.get('joiningPJ', [])
 
     if projectId in joiningPJ:
+        logging.info('Project ID %s is already in the joiningPJ array of user ID %s', projectId, userId)
         return False, "FAILED: You've alredy joined this project"
 
     # Modify joiningPJ if it already has 4 or more elements
     if len(joiningPJ) >= 3:
         joiningPJ = joiningPJ[1:3] + [projectId]  # Remove first, shift and add new projectId
+        logging.info('Adding project ID %s to the joiningPJ array of user ID %s', projectId, userId)
         return_message = "SUCCESS!\n LIMIT REACHED:The 4th project was added, and the oldest one was removed"
     else:
         joiningPJ.append(projectId)  # Simply add if less than 4 elements
+        logging.info('Adding project ID %s to the joiningPJ array of user ID %s', projectId, userId)
         return_message = "SUCCESS!"
 
     # Update the user's joiningPJ array
@@ -127,8 +137,10 @@ def join_project(client, userId, projectId):
     )
 
     if result.modified_count > 0:
+        logging.info('Project ID %s successfully added to user ID %s', projectId, userId)
         return True, return_message
     else:
+        logging.error('Failed to add project ID %s to user ID %s for an unknown reason', projectId, userId)
         return False, 'Project was already in joiningPJ or failed to add.'
 
 

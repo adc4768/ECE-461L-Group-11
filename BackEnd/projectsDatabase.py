@@ -1,5 +1,6 @@
 # Import necessary libraries and modules
 from pymongo import MongoClient
+import usersDatabase as userDB
 
 '''
 Structure of Project entry:
@@ -27,12 +28,13 @@ def queryProject(client, projectId):
 def createProject(client,userId, projectName, projectId, description):
     db = client['User_DB']
     projects = db['projects']
-    users = db['users']
     
     # Check if the project already exists
-    existing_project = projects.find_one({'projectId': projectId})
-    if existing_project:
-        return False  # Project already exists
+    # Check if the project already exists by projectId or projectName
+    if projects.find_one({'projectId': projectId}):
+        return False, "FAIL: projectID already exists"  # Project with the same ID exists
+    elif projects.find_one({'projectName': projectName}):
+        return False, "FAIL: projectName already exists"  # Project with the same name exists
     
     # Create the project document with hardware sets
     project = {
@@ -49,10 +51,7 @@ def createProject(client,userId, projectName, projectId, description):
     result = projects.insert_one(project)
     if result.inserted_id:
         # Add the projectId to the user's joiningPJ array
-        users.update_one(
-            {'userId': userId},
-            {'$addToSet': {'joiningPJ': projectId}}
-        )
+        userDB.join_project(client, userId, projectId)
         return True, 'Project created and added to user joiningPJ.'
     else:
         return False, 'Failed to create project.'
@@ -64,7 +63,7 @@ def checkOutHW(client, projectId, hwSetName, qty):
     
     project = projects.find_one({'projectId': projectId})
     if not project:
-        return False  # Project not found
+        return False , "No such project exist" # Project not found
     
     hwSets = project.get('hwSets', {})
     hwSet = hwSets.get(hwSetName)

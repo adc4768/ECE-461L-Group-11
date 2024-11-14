@@ -2,7 +2,7 @@
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from flask_cors import CORS  # Add this line
-
+import logging
 # Import custom modules for database interactions
 import usersDatabase as usersDB
 import projectsDatabase as projectsDB
@@ -21,7 +21,8 @@ def login():
     data = request.get_json()
     userId = data.get('userId')
     password = data.get('password')
-
+    print('userId: %s', userId)
+    print('password: %s', password)
     # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
 
@@ -64,25 +65,45 @@ def add_user():
     
 @app.route('/join', methods=['POST'])
 def join():
-    # Extract data from request
     data = request.get_json()
+    app.logger.info('Received data: %s', data)
+    
     userId = data.get('userId')
     projectId = data.get('projectId')
 
-    # Connect to MongoDB
+    # Log userId and projectId to the console
+    app.logger.info('userId: %s', userId)
+    app.logger.info('projectId: %s', projectId)
+
+    if not userId or not projectId:
+        app.logger.error('Missing userId or projectId')
+        return jsonify({'message': 'Missing userId or projectId'}), 400  # Bad Request
+
     client = MongoClient(MONGODB_SERVER)
-
-    # Attempt to add the user using the usersDB module
-    success, message = usersDB.join_project(client, userId, projectId)
-
-    # Close the MongoDB connection
+    try:
+        success, message = usersDB.join_project(client, userId, projectId)
+        app.logger.info('Join project result: %s, Message: %s', success, message)
+    except Exception as e:
+        app.logger.error('An error occurred: %s', str(e))
+        client.close()
+        return jsonify({'message': 'An error occurred while updating the user project.'}), 500  # Internal Server Error
+    
     client.close()
-
-    # Return a JSON response
     if success:
-        return jsonify({'message': message}), 200  # Created
+        return jsonify({'message': message}), 200  # OK
     else:
-        return jsonify({'message': message}), 400 
+        if message == 'Project does not exist.':
+            return jsonify({'message': message}), 404  # Not Found
+        elif message == 'Project already added to user joiningPJ.':
+            return jsonify({'message': message}), 409  # Conflict
+        elif message == 'User does not exist.':
+            return jsonify({'message': message}), 404  # Not Found
+        else:
+            return jsonify({'message': message}), 400  # Bad Request
+
+
+
+
 
 # Route for creating a new project
 @app.route('/create_project', methods=['POST'])
@@ -98,41 +119,17 @@ def create_project():
     client = MongoClient(MONGODB_SERVER)
 
     # Attempt to create the project using the projectsDB module
-    success = projectsDB.createProject(client, userId, projectName, projectId, description)
+    success, return_message = projectsDB.createProject(client, userId, projectName, projectId, description)
 
     # Close the MongoDB connection
     client.close()
 
     # Return a JSON response
     if success:
-        return jsonify({'message': 'Project created successfully.'}), 200  # Created
+        return jsonify({'message': return_message}), 200  # Created
     else:
-        return jsonify({'message': 'Project creation failed. Project ID may already exist.'}), 400  
+        return jsonify({'message': return_message}), 400  
 
-# Route for getting project information
-@app.route('/get_project_info', methods=['GET'])
-def get_project_info():
-    # Extract 'projectId' from query parameters
-    projectId = request.args.get('projectId')
-
-    # Connect to MongoDB
-    client = MongoClient(MONGODB_SERVER)
-
-    # Fetch project information using the projectsDB module
-    project = projectsDB.queryProject(client, projectId)
-
-    # Close the MongoDB connection
-    client.close()
-
-    # Return a JSON response
-    if project:
-        # Remove ObjectId from the response
-        project.pop('_id', None)
-        return jsonify({'project': project}), 200  
-    else:
-        return jsonify({'message': 'Project not found.'}), 400
-
-# Route for checking out hardware
 @app.route('/check_out', methods=['POST'])
 def check_out():
     # Extract data from request
@@ -185,22 +182,18 @@ def check_in():
         return jsonify({'message': result_message}), 200  
     else:
         return jsonify({'message': result_message}), 400
+    
+
+logging.basicConfig(level=logging.INFO)
 
 @app.route('/get_user_projects', methods=['GET'])
 def get_user_projects():
-    # Extract userId from query parameters
+    logging.info('get_user_projects route triggered')
     userId = request.args.get('userId')
+    print(f'userId: {userId}') # Print the value of userId to the console
 
-    if not userId:
-        return jsonify({'message': 'userId not provided.'}), 400
-
-    # Connect to MongoDB
     client = MongoClient(MONGODB_SERVER)
-
-    # Call get_evetyPRO_user_joining from usersDatabase
     success, data = usersDB.get_evetyPRO_user_joining(client, userId)
-
-    # Close the MongoDB connection
     client.close()
 
     if success:
