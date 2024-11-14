@@ -13,8 +13,34 @@ const LoginComponent = () => {
     const handleLoginSubmit = (e) => {
         e.preventDefault();
         console.log('Login Attempted:', loginCredentials);
-        navigate('/projects')
+    
+        // Send POST request to backend
+        fetch('http://localhost:5000/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: loginCredentials.username,
+                password: loginCredentials.password
+            })
+        })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(res => {
+            if (res.status === 200) {
+                // Login successful, store userId in session storage
+                sessionStorage.setItem('userId', loginCredentials.username);
+                console.log(res.body.message);
+                navigate('/projects');
+            } else {
+                // Login failed
+                alert(res.body.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error during login:', error);
+            alert('An error occurred during login.');
+        });
     };
+    
 
     const handleCreateAccountClick = () => {
         navigate('/new-user'); 
