@@ -7,19 +7,35 @@ temp = 'User_DB'  # Replace with your actual database name
 
 # Encryption and decryption functions
 def encrypt(inputText, N, D):
+    reversedText = inputText[::-1]
     encryptedText = ""
-    for c in inputText:
-        new_char = chr(((ord(c) - 32 + N * D) % 95) + 32)
-        encryptedText += new_char
-    return encryptedText[::-1]
+
+    for c in reversedText:
+        new_0 = chr(ord(c) + N * D)
+        if 32 <= ord(new_0) <= 126:
+            encryptedText += new_0
+        else:
+            new_1 = chr(32 + (ord(new_0) - 32) % 95)
+            encryptedText += new_1
+    return encryptedText
 
 def decrypt(encryptedText, N, D):
-    encryptedText = encryptedText[::-1]
+    reversedText = encryptedText[::-1]
     decryptedText = ""
-    for c in encryptedText:
-        new_char = chr(((ord(c) - 32 - N * D) % 95) + 32)
-        decryptedText += new_char
+
+    for c in reversedText:
+        new_0 = chr(ord(c) - N * D)
+        if 32 <= ord(new_0) <= 126:
+            decryptedText += new_0
+        else:
+            new_1 = chr(32 + (ord(new_0) - 32) % 95)
+            decryptedText += new_1
     return decryptedText
+
+
+
+
+
 
 
 
