@@ -12,10 +12,10 @@ def encrypt(inputText, N, D):
 
     for c in reversedText:
         new_0 = chr(ord(c) + N * D)
-        if 34 <= ord(new_0) <= 126:
+        if 32 <= ord(new_0) <= 126:
             encryptedText += new_0
         else:
-            new_1 = chr((ord(new_0) % 127) + 34)
+            new_1 = chr(32 + (ord(new_0) - 32) % 95)
             encryptedText += new_1
     return encryptedText
 
@@ -25,12 +25,19 @@ def decrypt(encryptedText, N, D):
 
     for c in reversedText:
         new_0 = chr(ord(c) - N * D)
-        if 34 <= ord(new_0) <= 126:
+        if 32 <= ord(new_0) <= 126:
             decryptedText += new_0
         else:
-            new_1 = chr((ord(new_0) % 127) + 34)
+            new_1 = chr(32 + (ord(new_0) - 32) % 95)
             decryptedText += new_1
     return decryptedText
+
+
+
+
+
+
+
 
 '''
 Structure of User entry:
@@ -79,22 +86,21 @@ def __queryUser(client, userId):
 
 # Function to log in a user
 def login(client, userId, password):
-    # Authenticate a user and return login status
     user = __queryUser(client, userId)
     if user is None:
         return False, 'User not found.'
-
-    # Decrypt the stored password
+    
     encrypted_password = user['password']
-    N = 3
-    D = 2
-    decrypted_password = decrypt(encrypted_password, N, D)
-
-    # Compare the passwords
+    decrypted_password = decrypt(encrypted_password, 3, 2)
+    
+    print(f"Decrypted Password: {decrypted_password}, Provided Password: {password}")
+    
     if password == decrypted_password:
         return True, 'Login successful.'
     else:
         return False, 'Incorrect password.'
+
+
     
 def join_project(client, userId, projectId):
     db = client['User_DB']
